@@ -16,7 +16,7 @@
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI 已安装并登录
 - Asterinas 项目已在 Docker 容器中运行（参见 [Building and Running](#)）
-- Linux 驱动源码已放在项目根目录下（如 `linux-r8169/`）
+- Linux 驱动源码已放在项目根目录下（如 `linux-e1000/`）
 
 ### 运行工作流
 
@@ -24,7 +24,7 @@
 
 ```bash
 # 翻译一个 Linux 驱动，传入驱动源码路径
-/workflow linux-driver-to-asterinas ./linux-r8169/drivers/net/ethernet/realtek
+/workflow linux-driver-to-asterinas ./linux-e1000/drivers/net/ethernet/intel/e1000
 
 # 也可以用 v2 版本
 /workflow linux-driver-to-asterinas-v2 ./linux-e1000/drivers/net/ethernet/intel/e1000
