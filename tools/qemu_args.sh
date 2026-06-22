@@ -19,6 +19,7 @@
 #  - SMP: number of CPUs;
 #  - MEM: amount of memory, e.g. "8G";
 #  - VNC_PORT: VNC port, default is "42";
+#  - NIC: network device model, e.g. "e1000" or "virtio-net-pci" (default);
 #  - ATTACH_XFSTESTS_IMAGES: "true" or "false", whether to attach xfstests images (xfstests_test.img and xfstests_scratch.img) to the VM. Defaults to auto-detection from ENABLE_CONFORMANCE_TEST + CONFORMANCE_TEST_SUITE.
 
 OVMF=${OVMF:-"on"}
@@ -26,6 +27,7 @@ VHOST=${VHOST:-"off"}
 VSOCK=${VSOCK:-"off"}
 VIRTIOFS=${VIRTIOFS:-"off"}
 NETDEV=${NETDEV:-"user"}
+NIC=${NIC:-"virtio-net-pci"}
 CONSOLE=${CONSOLE:-"hvc0"}
 
 ATTACH_XFSTESTS_IMAGES=${ATTACH_XFSTESTS_IMAGES:-false}
@@ -67,6 +69,13 @@ if [ "$CONSOLE" = "hvc0" ]; then
     CONSOLE_ARGS="-device virtconsole,chardev=mux -serial file:qemu-serial.log"
 else
     CONSOLE_ARGS="-serial chardev:mux"
+fi
+
+# Build NIC device argument based on NIC variable
+if [ "$NIC" = "virtio-net-pci" ]; then
+    NIC_DEVICE="virtio-net-pci,netdev=net01,disable-legacy=on,disable-modern=off$VIRTIO_NET_FEATURES$IOMMU_DEV_EXTRA"
+else
+    NIC_DEVICE="$NIC,netdev=net01"
 fi
 
 if [ "$1" = "riscv" ]; then
@@ -182,7 +191,7 @@ else
         -device virtio-blk-pci,bus=pcie.0,addr=0x7,drive=x1,serial=vexfat,disable-legacy=on,disable-modern=off,queue-size=64,num-queues=1,request-merging=off,backend_defaults=off,discard=off,write-zeroes=off,event_idx=off,indirect_desc=off,queue_reset=off$IOMMU_DEV_EXTRA \
         -object rng-random,id=rng0,filename=/dev/urandom \
         -device virtio-rng-pci,bus=pcie.0,addr=0x8,disable-legacy=on,disable-modern=off,rng=rng0,event_idx=off,indirect_desc=off,queue_reset=off$IOMMU_DEV_EXTRA \
-        -device virtio-net-pci,netdev=net01,disable-legacy=on,disable-modern=off$VIRTIO_NET_FEATURES$IOMMU_DEV_EXTRA \
+        -device $NIC_DEVICE \
         -device virtio-serial-pci,disable-legacy=on,disable-modern=off$IOMMU_DEV_EXTRA \
         -drive if=none,format=raw,id=nvme0n1,file=./test/initramfs/build/nvme0n1.img \
         -device nvme,drive=nvme0n1,serial=nvme0n1 \

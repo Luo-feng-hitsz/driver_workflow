@@ -30,6 +30,8 @@ members = [
     "kernel/comps/block",
     "kernel/comps/cmdline",
     "kernel/comps/console",
+    "kernel/comps/e1000",
+    "kernel/comps/e1000e",
     "kernel/comps/framebuffer",
     "kernel/comps/i8042",
     "kernel/comps/input",
@@ -38,6 +40,7 @@ members = [
     "kernel/comps/network",
     "kernel/comps/nvme",
     "kernel/comps/pci",
+    "kernel/comps/r8169",
     "kernel/comps/softirq",
     "kernel/comps/systree",
     "kernel/comps/time",
@@ -77,6 +80,8 @@ default-members = [
     "kernel/comps/block",
     "kernel/comps/cmdline",
     "kernel/comps/console",
+    "kernel/comps/e1000",
+    "kernel/comps/e1000e",
     "kernel/comps/framebuffer",
     "kernel/comps/i8042",
     "kernel/comps/input",
@@ -85,6 +90,7 @@ default-members = [
     "kernel/comps/network",
     "kernel/comps/nvme",
     "kernel/comps/pci",
+    "kernel/comps/r8169",
     "kernel/comps/softirq",
     "kernel/comps/systree",
     "kernel/comps/time",
@@ -149,6 +155,8 @@ ostd-test = { version = "0.17.2", path = "ostd/libs/ostd-test" }
 aster-block = { path = "kernel/comps/block" }
 aster-cmdline = { path = "kernel/comps/cmdline" }
 aster-console = { path = "kernel/comps/console" }
+aster-e1000 = { path = "kernel/comps/e1000" }
+aster-e1000e = { path = "kernel/comps/e1000e" }
 aster-framebuffer = { path = "kernel/comps/framebuffer" }
 aster-i8042 = { path = "kernel/comps/i8042" }
 aster-input = { path = "kernel/comps/input" }
@@ -157,6 +165,7 @@ aster-mlsdisk = { path = "kernel/comps/mlsdisk" }
 aster-network = { path = "kernel/comps/network" }
 aster-nvme = { path = "kernel/comps/nvme" }
 aster-pci = { path = "kernel/comps/pci" }
+aster-r8169 = { path = "kernel/comps/r8169" }
 aster-softirq = { path = "kernel/comps/softirq" }
 aster-systree = { path = "kernel/comps/systree" }
 aster-time = { path = "kernel/comps/time" }

@@ -7,7 +7,7 @@ mod poll;
 mod sched;
 
 pub use broadcast::is_broadcast_endpoint;
-pub use init::{init, iter_all_ifaces, loopback_iface, virtio_iface};
+pub use init::{e1000_iface, e1000e_iface, eth_iface, init, iter_all_ifaces, loopback_iface, r8169_iface, virtio_iface};
 pub(super) use poll::init_in_first_kthread;
 
 pub type Iface = dyn aster_bigtcp::iface::Iface<ext::BigtcpExt>;

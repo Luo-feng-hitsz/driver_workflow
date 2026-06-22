@@ -1,192 +1,79 @@
-<p align="center">
-    <img src="book/src/images/logo_en.svg" alt="asterinas-logo" width="620"><br>
-    Toward a production-grade Linux alternative—memory safe, high-performance, and more<br/>
-</p>
+# Linux Driver → Asterinas 自动翻译工作流
 
-<!-- Asterinas NixOS 0.17.0 demo. It is uploaded as a Github attachment
-so that GitHub will render that URL as a video player in Markdown.
-The original file name will be displayed up in the top bar of the video player.
-So make sure you give the video file a cool name before uploading it.
--->
-https://github.com/user-attachments/assets/26be2d18-994d-4658-a1b8-f8959bd88b75
+基于 Claude Code Workflow，将 Linux 内核网卡驱动自动翻译为 Asterinas（Rust OS 内核）可用的安全 Rust 驱动。
 
-<p align="center">
-    <a href="https://github.com/asterinas/asterinas/actions/workflows/test_x86.yml"><img src="https://github.com/asterinas/asterinas/actions/workflows/test_x86.yml/badge.svg?event=push" alt="Test x86-64" style="max-width: 100%;"></a>
-    <a href="https://github.com/asterinas/asterinas/actions/workflows/test_riscv.yml"><img src="https://github.com/asterinas/asterinas/actions/workflows/test_riscv.yml/badge.svg?event=push" alt="Test riscv64" style="max-width: 100%;"></a>
-    <a href="https://github.com/asterinas/asterinas/actions/workflows/test_loongarch.yml"><img src="https://github.com/asterinas/asterinas/actions/workflows/test_loongarch.yml/badge.svg?event=push" alt="Test loongarch64" style="max-width: 100%;"></a>
-    <a href="https://github.com/asterinas/asterinas/actions/workflows/test_x86_tdx.yml"><img src="https://github.com/asterinas/asterinas/actions/workflows/test_x86_tdx.yml/badge.svg" alt="Test Intel TDX" style="max-width: 100%;"></a>
-    <a href="https://github.com/asterinas/asterinas/actions/workflows/test_nixos_full.yml"><img src="https://github.com/asterinas/asterinas/actions/workflows/test_nixos_full.yml/badge.svg?event=schedule" alt="Test AsterNixOS (full)" style="max-width: 100%;"></a>
-    <a href="https://asterinas.github.io/benchmark/x86-64/"><img src="https://github.com/asterinas/asterinas/actions/workflows/benchmark_x86.yml/badge.svg" alt="Benchmark x86-64" style="max-width: 100%;"></a>
-    <a href="https://asterinas.github.io/benchmark/tdx/"><img src="https://github.com/asterinas/asterinas/actions/workflows/benchmark_x86_tdx.yml/badge.svg" alt="Benchmark Intel TDX" style="max-width: 100%;"></a>
-    <br/>
-</p>
+## 工作流文件
 
-**News:**
-* 2025-12-08: **FAST 2026** accepted a paper on a novel secure storage solution having been integrated into Asterinas: _MlsDisk: Trusted Block Storage for TEEs Based on Layered Secure Logging_.
-* 2025-10-17: **ICSE 2026** accepted yet another paper about Asterinas: _RusyFuzz: Unhandled Exception Guided Fuzzing for Rust OS Kernel_.
-* 2025-10-14: [*CortenMM: Efficient Memory Management with Strong Correctness Guarantees*](https://dl.acm.org/doi/10.1145/3731569.3764836) received the **Best Paper Award** at **SOSP 2025**.
-* 2025-07-23: **SOSP 2025** accepted another Asterinas paper: [*CortenMM: Efficient Memory Management with Strong Correctness Guarantees*](https://dl.acm.org/doi/10.1145/3731569.3764836).
-* 2025-06-18: **USENIX _;login:_ magazine** published [*Asterinas: A Rust-Based Framekernel to Reimagine Linux in the 2020s*](https://www.usenix.org/publications/loginonline/asterinas-rust-based-framekernel-reimagine-linux-2020s).
-* 2025-04-30: **USENIX ATC 2025** accepted two Asterinas papers:
-    1. [*Asterinas: A Linux ABI-Compatible, Rust-Based Framekernel OS with a Small and Sound TCB*](https://www.usenix.org/conference/atc25/presentation/peng-yuke);
-    2. [*Converos: Practical Model Checking for Verifying Rust OS Kernel Concurrency*](https://www.usenix.org/conference/atc25/presentation/tang).
+| 文件 | 说明 |
+|------|------|
+| `.claude/workflow/linux-driver-to-asterinas.js` | 主工作流（v3，最新） |
+| `.claude/workflow/linux-driver-to-asterinas-v2.js` | v2 版本 |
+| `.claude/workflow/linux-driver-to-asterinas-v1.js` | v1 版本 |
 
-Congratulations to the Asterinas community🎉🎉🎉
+## 工作流阶段
 
-## Introducing Asterinas
+1. **Discover** — 一个 agent 分析 Linux 驱动源码，输出结构化信息（驱动名、PCI ID、目标芯片、文件角色分类、Rust 模块拆分计划及依赖关系）。使用 JSON schema 强制输出格式。
+2. **Translate** — 基于 Discover 阶段规划的模块依赖图，按波次并行翻译。无依赖的模块同一波并行执行，有依赖的等前序完成后再启动。如果出现循环依赖则退化为顺序执行。每个 agent 只负责翻译一个 `.rs` 模块。
+3. **Assemble** — 读取所有已翻译的模块文件，统一编写 `Cargo.toml` 和 `lib.rs`，确保导入路径一致、init 注册正确。
+4. **Compile** — 运行 `cargo check` 验证编译，失败则由修复 agent 根据错误信息修正代码，最多重试 3 次。
+5. **Integrate** — 单个 agent 把新 crate 接入内核构建和网络栈，修改 5 个文件：根 `Cargo.toml` 加 workspace member、`kernel/Cargo.toml` 加依赖、`init.rs` 加网络接口初始化、`mod.rs` 加导出、`common.rs` 加 fallback。
+6. **Review** — 两个并行 agent 分别做正确性审查和集成审查。
+7. **Test** — 启动 QEMU（`NIC=<driver>`），配 DNS，`wget bing.com`，失败则自动修复（最多 3 次）。
 
-The future of operating systems (OSes) belongs to Rust—a modern systems programming language (PL)
-that delivers safety, efficiency, and productivity at once.
-The open question is not _whether_ OS kernels should transition from C to Rust,
-but _how_ we get there.
+## 已完成的驱动
 
-Linux follows an _incremental_ path.
-While the Rust for Linux project has successfully integrated Rust as an official second PL,
-this approach faces _inherent friction_.
-As a newcomer within a massive C codebase,
-Rust must often compromise on safety, efficiency, clarity, and ergonomics
-to maintain compatibility with legacy structures.
-And while new Rust code can improve what it touches,
-it cannot retroactively eliminate _vulnerabilities_ in decades of existing C code.
+### e1000
 
-Asterinas takes a _clean-slate_ approach.
-By building a Linux-compatible, general-purpose OS kernel from the ground up in Rust,
-we are liberated from the constraints of a legacy C codebase—its interfaces, designs, and assumptions—and from the need to preserve historical compatibility for outdated platforms.
-**Languages—including PLs—shape our way of thinking**.
-Through the lens of a modern PL, Asterinas rethinks and modernizes the construction of OS kernels:
+- **目标芯片**：82540EM
+- **Crate**：`aster-e1000`
+- **路径**：`kernel/comps/e1000/`
+- **Review 报告**：`kernel/comps/e1000/REVIEW-correctness.md`、`kernel/comps/e1000/REVIEW-integration.md`
+- **统计**：5 个 agent，约 57 万 token，耗时约 35 分钟
 
-* **Modern architecture.**
-  Asterinas pioneers the [_framekernel_](https://asterinas.github.io/book/kernel/the-framekernel-architecture.html) architecture,
-  combining monolithic-kernel performance with microkernel-inspired separation.
-  Unsafe Rust is confined to a small, auditable framework called [OSTD](https://asterinas.github.io/api-docs-nightly/ostd/),
-  while the rest of the kernel is written in safe Rust,
-  keeping the memory-safety TCB intentionally minimal.
+### e1000e
 
-* **Modern design.**
-  Asterinas learns from Linux's hard-won engineering lessons,
-  but it is not afraid to deviate when the design warrants it.
-  For example, Asterinas improves the CPU scalability of its memory management subsystem
-  with a novel scheme called [CortenMM](https://dl.acm.org/doi/10.1145/3731569.3764836).
+- **目标芯片**：82574L
+- **Crate**：`aster-e1000e`
+- **路径**：`kernel/comps/e1000e/`
+- **Review 报告**：`kernel/comps/e1000e/REVIEW-integration.md`
+- **统计**：翻译了 8 个模块（regs, phy, nvm, mac, desc, tx, rx, driver），21 个 agent，约 250 万 token，耗时约 2 小时 15 分钟
 
-* **Modern code.**
-  Asterinas's codebase prioritizes safety, clarity, and maintainability.
-  Performance is pursued aggressively, but never by compromising safety guarantees.
-  Readability is treated as a feature, not a luxury,
-  and the codebase is structured to avoid hidden, cross-module coupling.
+### r8169
 
-* **Modern tooling.**
-  Asterinas ships a purpose-built toolkit, [OSDK](https://asterinas.github.io/book/osdk/guide/index.html),
-  to facilitate building, running, and testing Rust kernels or kernel components.
-  Powered by OSTD,
-  OSDK makes kernel development as easy and fluid as writing a standard Rust application, eliminating the traditional friction of OS engineering.
+- **Crate**：`aster-r8169`
+- **路径**：`kernel/comps/r8169/`
+- **Review 报告**：`kernel/comps/r8169/REVIEW-correctness.md`、`kernel/comps/r8169/REVIEW-integration.md`
 
-Asterinas aims to become **a production-grade, memory-safe Linux alternative**,
-with performance that matches Linux—and in some scenarios, exceeds it.
-The project has been under active development for four years,
-supports 230+ Linux system calls,
-and has launched an experimental distribution,
-[Asterinas NixOS](https://asterinas.github.io/book/distro/index.html).
+## 源代码改动（以 e1000 为例）
 
-In 2026, our priority is to advance project maturity toward production readiness,
-specifically targeting standard and confidential virtual machines on x86-64.
-Looking ahead, we will continue to expand functionality and 
-harden the system for **mission-critical deployments**
-in data centers, autonomous vehicles, and embodied AI.
+1. `tools/qemu_args.sh` — 加了 `NIC` 环境变量支持，默认 `virtio-net-pci`，设 `NIC=e1000` 即可切换
+2. `Components.toml` — 注册了 `aster-e1000` 和 `aster-r8169`
+3. `kernel/comps/e1000/Cargo.toml` — 加了缺失的 `zerocopy` 依赖
+4. `kernel/comps/e1000/src/intr.rs` — 移除了 `bitflags` 的重复 derive
+5. `kernel/comps/e1000/src/driver.rs` — 加了 probe 成功和 MAC 地址的 info 日志
 
-## Getting Started
+## 测试方法
 
-### Supported CPU Architectures
+```bash
+# 使用 e1000 网卡启动内核
+NIC=e1000 make run_kernel VNC_PORT=27
 
-Asterinas targets modern, 64-bit platforms only.
+# 在 Asterinas 内配置 DNS（先在 Docker 容器里查看 DNS 地址）
+cat /etc/resolv.conf
 
-A **development platform** is where you build and test Asterinas
-(i.e., the host machine running the Docker-based development environment).
+# 将 nameserver 写入 Asterinas 的 resolv.conf
+echo 'nameserver 127.0.0.53' > /etc/resolv.conf
 
-| Development Platform |
-| -------------------- |
-| x86-64               |
-| ARM64                |
+# 测试网络连通性
+wget bing.com
+```
 
-A **deployment platform** is a CPU architecture
-that Asterinas can run on as an OS kernel.
+## 其他目录
 
-| Deployment Platform | Tier   |
-| ------------------- | ------ |
-| x86-64              | Tier 1 |
-| x86-64 (Intel TDX)  | Tier 2 |
-| RISC-V 64           | Tier 2 |
-| LoongArch 64        | Tier 3 |
-
-Tier definitions:
-- **Tier 1:** Fully supported and tested.
-  CI runs the full test suite on every PR.
-- **Tier 2:** Actively developed with basic functionality working.
-  CI runs build checks and basic tests on a regular basis
-  (per PR for RISC-V and nightly for Intel TDX),
-  but the full test suite is not yet covered.
-- **Tier 3:** Early-stage or experimental.
-  The kernel can boot and perform basic operations,
-  but CI coverage is limited and
-  may not include automated runtime tests for every pull request.
-
-### For End Users
-
-We provide [Asterinas NixOS ISO Installer](https://github.com/asterinas/asterinas/releases)
-to make the Asterinas kernel more accessible for early adopters and enthusiasts.
-We encourage you to try out Asterinas NixOS and share feedback.
-Instructions on how to use the ISO installer can be found [here](https://asterinas.github.io/book/distro/index.html#end-users).
-
-**Disclaimer: Asterinas is an independent, community-led project.
-Asterinas NixOS is _not_ an official NixOS project and has _no_ affiliation with the NixOS Foundation. _No_ sponsorship or endorsement is implied.**
-
-### For Kernel Developers
-
-Follow the steps below to get Asterinas up and running.
-
-1. Download the latest source code on an x86-64 (or ARM64) Linux machine:
-
-    ```bash
-    git clone https://github.com/asterinas/asterinas
-    ```
-
-2. Run a Docker container as the development environment:
-
-    ```bash
-    docker run -it --privileged --network=host -v /dev:/dev -v $(pwd)/asterinas:/root/asterinas asterinas/asterinas:0.17.2-20260523
-    ```
-
-    Alternatively, if you use VS Code with the
-    [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-    extension, open the cloned folder and select "Reopen in Container".
-
-3. Inside the container,
-go to the project folder (`/root/asterinas`) and run:
-
-    ```bash
-    make kernel
-    make run_kernel
-    ```
-
-    This results in a VM running the Asterinas kernel with a small initramfs.
-
-4. To install and test real-world applications on Asterinas,
-build and run Asterinas NixOS in a VM:
-
-    ```bash
-    make nixos
-    make run_nixos
-    ```
-    
-    This boots into an interactive shell in Asterinas NixOS,
-    where you can use Nix to install and try more packages.
-
-## The Book
-
-See [The Asterinas Book](https://asterinas.github.io/book/) to learn more about the project.
-
-## License
-
-Asterinas's source code and documentation primarily use the
-[Mozilla Public License (MPL), Version 2.0](https://github.com/asterinas/asterinas/blob/main/LICENSE-MPL).
-Select components are under more permissive licenses,
-detailed [here](https://github.com/asterinas/asterinas/blob/main/.licenserc.yaml). For the rationales behind the choice of MPL, see [here](https://asterinas.github.io/book/index.html#licensing).
+| 目录 | 说明 |
+|------|------|
+| `e1000-generated/` | e1000 工作流生成的中间产物 |
+| `linux-e1000/` | e1000 Linux 原始驱动源码 |
+| `linux-e1000e/` | e1000e Linux 原始驱动源码 |
+| `linux-r8169/` | r8169 Linux 原始驱动源码 |
+| `test/initramfs/src/test_e1000_net.sh` | e1000 网络测试脚本 |

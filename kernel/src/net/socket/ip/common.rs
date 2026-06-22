@@ -8,7 +8,7 @@ use aster_bigtcp::{
 
 use crate::{
     net::{
-        iface::{Iface, iter_all_ifaces, loopback_iface, virtio_iface},
+        iface::{Iface, eth_iface, iter_all_ifaces, loopback_iface},
         socket::util::check_port_privilege,
     },
     prelude::*,
@@ -41,8 +41,8 @@ fn get_ephemeral_iface(remote_ip_addr: &IpAddress) -> Arc<Iface> {
 
             // FIXME: Instead of hardcoding the rules here, we should choose the
             // default interface according to the routing table.
-            if let Some(virtio_iface) = virtio_iface() {
-                virtio_iface.clone()
+            if let Some(iface) = eth_iface() {
+                iface.clone()
             } else {
                 loopback_iface().clone()
             }
@@ -58,10 +58,10 @@ fn get_ephemeral_iface(remote_ip_addr: &IpAddress) -> Arc<Iface> {
 
             // Fall back to an interface with an IPv6 address.
             // Prefer virtio over loopback for external traffic.
-            if let Some(virtio_iface) = virtio_iface()
-                && virtio_iface.ipv6_addr().is_some()
+            if let Some(iface) = eth_iface()
+                && iface.ipv6_addr().is_some()
             {
-                return virtio_iface.clone();
+                return iface.clone();
             }
 
             loopback_iface().clone()
