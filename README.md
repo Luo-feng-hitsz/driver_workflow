@@ -72,8 +72,19 @@ wget bing.com
 
 | 目录 | 说明 |
 |------|------|
-| `e1000-generated/` | e1000 工作流生成的中间产物 |
-| `linux-e1000/` | e1000 Linux 原始驱动源码 |
-| `linux-e1000e/` | e1000e Linux 原始驱动源码 |
-| `linux-r8169/` | r8169 Linux 原始驱动源码 |
+| `linux-e1000/` | e1000 Linux 原始驱动源码（未纳入 git） |
+| `linux-e1000e/` | e1000e Linux 原始驱动源码（未纳入 git） |
+| `linux-r8169/` | r8169 Linux 原始驱动源码（未纳入 git） |
 | `test/initramfs/src/test_e1000_net.sh` | e1000 网络测试脚本 |
+
+## 版权声明
+
+本仓库基于以下开源项目构建：
+
+- **Asterinas** — https://github.com/asterinas/asterinas
+  采用 MPL-2.0 许可证，原始版权归属 Asterinas 项目及其贡献者。
+
+- **Linux Kernel** — https://github.com/torvalds/linux
+  翻译的网卡驱动（e1000、e1000e、r8169）源自 Linux 内核源码，采用 GPL-2.0-only 许可证，原始版权归属 respective authors。
+
+本仓库中的工作流代码及新增内容遵循各自上游项目的许可证条款。
