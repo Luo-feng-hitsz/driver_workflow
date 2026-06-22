@@ -42,3 +42,4 @@ distro/etc_nixos/_config_for_test.nix
 linux-e1000/
 linux-e1000e/
 linux-r8169/
+test/initramfs/build/

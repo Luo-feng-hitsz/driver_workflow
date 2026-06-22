@@ -40,20 +40,6 @@
 6. 审查代码正确性和集成兼容性
 7. 启动 QEMU 测试网络连通性
 
-### 运行后验证
-
-```bash
-# 编译内核
-make kernel
-
-# 使用新驱动启动 QEMU
-NIC=e1000 make run_kernel VNC_PORT=27
-
-# 在 Asterinas 内配置 DNS 并测试
-echo 'nameserver 127.0.0.53' > /etc/resolv.conf
-wget bing.com
-```
-
 ### 工作流输出
 
 - 翻译后的 Rust crate 位于 `kernel/comps/<driver_name>/`
