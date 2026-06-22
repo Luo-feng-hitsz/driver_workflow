@@ -1,9 +1,0 @@
-// Obtain random bytes
-getrandom(
-    buf, buflen,
-    flags =
-        // Optional flags:
-        //
-        // High-entropy pool
-        GRND_RANDOM
-);

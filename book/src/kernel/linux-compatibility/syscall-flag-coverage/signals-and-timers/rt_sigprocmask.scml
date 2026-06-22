@@ -1,4 +1,0 @@
-// Change and/or retrieve blocked signals
-rt_sigprocmask(
-    how = SIG_BLOCK | SIG_UNBLOCK | SIG_SETMASK, set, oldset, sigsetsize
-);

@@ -1,8 +1,0 @@
-GetdentsTest/0.Issue128ProcSeekEnd
-GetdentsTest/1.Issue128ProcSeekEnd
-GetdentsTest/0.OpathDirectory
-GetdentsTest/1.OpathDirectory
-GetdentsTest/0.ProcSelfFd
-GetdentsTest/1.ProcSelfFd
-GetdentsTest/0.ZeroLengthOutBuffer
-GetdentsTest/1.ZeroLengthOutBuffer

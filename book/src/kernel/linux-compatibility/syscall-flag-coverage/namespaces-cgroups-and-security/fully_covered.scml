@@ -1,3 +1,0 @@
-// Get/set list of supplementary group IDs
-getgroups(size, list);
-setgroups(size, list);
