@@ -44,6 +44,31 @@
 - **路径**：`kernel/comps/r8169/`
 - **Review 报告**：`kernel/comps/r8169/REVIEW-correctness.md`、`kernel/comps/r8169/REVIEW-integration.md`
 
+## 代码规模与功能裁剪
+
+翻译后的 Rust 代码相比 Linux 原版 C 代码规模大幅缩减：
+
+| 驱动 | Linux 原版（仅驱动自身） | Rust 翻译版 | 缩减比例 |
+|------|--------------------------|-------------|----------|
+| e1000 | ~17,000 行 | ~2,600 行 | ~15% |
+| e1000e | ~30,000 行 | ~1,960 行 | ~6.5% |
+
+> 注意：Linux 源码目录中包含整个 `drivers/net/` 子树（virtio_net、macsec、tun 等几十个无关驱动），上表仅统计了 `drivers/net/ethernet/intel/e1000*/` 下的实际驱动代码。
+
+缩减主要来自以下功能裁剪，而非翻译丢失：
+
+1. **ethtool 实现** — Linux 驱动包含完整的 ethtool 接口（e1000: ~1,900 行，e1000e: ~2,400 行），用于查询/配置链路状态、寄存器转储等。Asterinas 暂无 ethtool 框架，未翻译。
+2. **模块参数（param.c）** — Linux 驱动支持通过内核命令行传递参数（如中断限制、Tx/Rx 描述符数量等），Asterinas 不使用此机制。
+3. **PTP 硬件时间戳** — e1000e 包含 `ptp.c`（~355 行）实现精确时间协议，当前未翻译。
+4. **管理固件接口（manage.c）** — e1000e 的管理引擎交互代码（~329 行），当前未翻译。
+5. **电源管理** — Wake-on-LAN、suspend/resume 等 ACPI 相关逻辑未翻译。
+6. **多芯片变体适配** — Linux e1000e 驱动支持 82571/82573/80003es2lan/ich8lan 等多种 MAC 系列，翻译仅针对 82574L 单一芯片。
+7. **调试/诊断/trace 基础设施** — Linux 的 dev_info/dev_err 日志、ftrace、ethtool 寄存器转储等未翻译。
+8. **Rust 表达力** — enum、match、derive 宏、trait 等语言特性比 C 的 switch-case/函数指针更紧凑。
+9. **Asterinas 框架代劳** — OSTD 的 `NetDevice` trait 等已提供收发框架，驱动无需像 Linux 那样实现 net_device_ops 的全套样板代码。
+
+如果只保留核心收发路径和硬件操作（去掉 ethtool、PTP、param、manage、多芯片适配），Linux 原版大约 1-2 万行，与 Rust 版的差距并不悬殊。
+
 ## 源代码改动（以 e1000 为例）
 
 1. `tools/qemu_args.sh` — 加了 `NIC` 环境变量支持，默认 `virtio-net-pci`，设 `NIC=e1000` 即可切换
