@@ -20,13 +20,13 @@
 
 ### 运行工作流
 
-在 Claude Code 中，直接用自然语言描述任务即可触发工作流，例如：
+在 Claude Code 中，需要指定工作流名称来触发，例如：
 
 ```
-帮我翻译 ./linux-r8169/drivers/net/ethernet/realtek 这个 Linux 驱动
+帮我用 linux-driver-to-asterinas 工作流翻译 ./linux-r8169/drivers/net/ethernet/realtek 这个 Linux 驱动
 ```
 
-Claude Code 会自动调用 `.claude/workflow/` 下的工作流脚本，传入驱动源码路径作为参数。工作流会自动：
+Claude Code 会调用 `.claude/workflow/linux-driver-to-asterinas.js`，传入驱动源码路径作为参数。工作流会自动：
 
 1. 分析该目录下的 C 源码，提取驱动名、PCI ID、模块结构
 2. 按依赖关系并行翻译为 Rust 模块
