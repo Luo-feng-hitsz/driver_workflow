@@ -10,6 +10,56 @@
 | `.claude/workflow/linux-driver-to-asterinas-v2.js` | v2 版本 |
 | `.claude/workflow/linux-driver-to-asterinas-v1.js` | v1 版本 |
 
+## 使用方法
+
+### 前置条件
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI 已安装并登录
+- Asterinas 项目已在 Docker 容器中运行（参见 [Building and Running](#)）
+- Linux 驱动源码已放在项目根目录下（如 `linux-r8169/`）
+
+### 运行工作流
+
+在 Claude Code 中执行：
+
+```bash
+# 翻译一个 Linux 驱动，传入驱动源码路径
+/workflow linux-driver-to-asterinas ./linux-r8169/drivers/net/ethernet/realtek
+
+# 也可以用 v2 版本
+/workflow linux-driver-to-asterinas-v2 ./linux-e1000/drivers/net/ethernet/intel/e1000
+```
+
+`args` 参数是 Linux 驱动源码的**目录路径**，工作流会自动：
+
+1. 分析该目录下的 C 源码，提取驱动名、PCI ID、模块结构
+2. 按依赖关系并行翻译为 Rust 模块
+3. 组装 crate（`Cargo.toml` + `lib.rs`）
+4. 编译验证并自动修复错误
+5. 接入内核构建系统和网络栈
+6. 审查代码正确性和集成兼容性
+7. 启动 QEMU 测试网络连通性
+
+### 运行后验证
+
+```bash
+# 编译内核
+make kernel
+
+# 使用新驱动启动 QEMU
+NIC=e1000 make run_kernel VNC_PORT=27
+
+# 在 Asterinas 内配置 DNS 并测试
+echo 'nameserver 127.0.0.53' > /etc/resolv.conf
+wget bing.com
+```
+
+### 工作流输出
+
+- 翻译后的 Rust crate 位于 `kernel/comps/<driver_name>/`
+- Review 报告位于 `kernel/comps/<driver_name>/REVIEW-*.md`
+- 内核集成改动会直接修改 `Cargo.toml`、`Components.toml`、`init.rs`、`mod.rs`、`common.rs` 等文件
+
 ## 工作流阶段
 
 1. **Discover** — 一个 agent 分析 Linux 驱动源码，输出结构化信息（驱动名、PCI ID、目标芯片、文件角色分类、Rust 模块拆分计划及依赖关系）。使用 JSON schema 强制输出格式。
